@@ -4,6 +4,10 @@ wb = paper_webull()
 data = wb.login('etlivefree@gmail.com','liveFree0815!','TBpython','422834')
 wb.refresh_login()
 
+def execute_webull_option(optionId,limit_price,action='BUY',quantity=1,order_type='LMT',enforce='GTC'):
+    # Places an options trade from an option Id via the Webull Platform; returns the result of the trade
+    result = wb.place_order_option(optionId=optionId, lmtPrice=limit_price, action=action, orderType=order_type, enforce=enforce,quant=quantity)
+    return result
 
 def get_webull_options(ticker):
     options = wb.get_options(ticker)
