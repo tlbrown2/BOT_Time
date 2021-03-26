@@ -12,7 +12,7 @@ app = dash.Dash(__name__)
 
 # ---------- Import and clean data (importing csv into pandas)
 # df = pd.read_csv("intro_bees.csv")
-ticker = 'GRWG'
+ticker = 'MSFT'
 df = td.getTickerPriceData(ticker,period='90d',interval='1d')
 signals_df = td.makeTickerDfSignals(df,interval='1d')
 signals_df.drop(columns='Close',inplace=True)

@@ -2,8 +2,7 @@ import yfinance as yf
 import numpy as np
 import scipy as sp
 import pandas as pd
-#from talib import RSI,BBANDS,MACD
-#from yahoo_fin import stock_info as si
+
 
 
 def getTickerPriceData(tickers,period='5d',interval='1d'):
@@ -58,13 +57,12 @@ def calculate_BollingerBands(data,long_window=21):
 
     return upper,lower
 
-def makeTickerDfSignals(ticker_data_df,interval='1d',short_window=9,long_window=21):
+def makeTickerDfSignals(ticker_data_df,interval='1d',short_window=9,long_window=21,initial_capital=10000.00,shares=500):
     #Add computational signals to the ticker dataframe
 
     # Day Length Trade Intervals:
 
     signals_df = ticker_data_df.loc[:,['Close']].copy()
-
 
     # Calculate Daily Returns
     signals_df['Daily_Return'] = signals_df['Close'].dropna().pct_change()
@@ -92,7 +90,6 @@ def makeTickerDfSignals(ticker_data_df,interval='1d',short_window=9,long_window=
     signals_df['fast_vol'] = signals_df['Daily_Return'].ewm(halflife=short_window).std()
     signals_df['slow_vol'] = signals_df['Daily_Return'].ewm(halflife=long_window).std()
 
-
     # Calculate the points in time at which a position should be taken, 1 or -1
     signals_df["Entry/Exit"] = signals_df["Signal"].diff()
 
@@ -104,9 +101,38 @@ def makeTickerDfSignals(ticker_data_df,interval='1d',short_window=9,long_window=
     signals_df['MACD'] = macd
     signals_df['MACD_Sig'] = macdsignal
 
+    #Bollinger Bands
     upper_band,lower_band = calculate_BollingerBands(signals_df['Close'], long_window=long_window)
     signals_df['Upper_Band'] = upper_band
     signals_df['Lower_Band'] = lower_band
 
+    signals_df.dropna(inplace=True)
 
     return signals_df
+
+
+def execute_backtest(data_df,initial_capital=10000.00,shares=500):
+    # Take the number of shares positions where the dual moving average crossover is 1 (SMA50 is greater than SMA100)
+    data_df["Position"] = shares * data_df["Signal"]
+
+    # Find the points in time where a 500 share position is bought or sold
+    data_df["Entry/Exit Position"] = data_df["Position"].diff()
+
+    # Multiply share price by entry/exit positions and get the cumulatively sum
+    data_df["Portfolio Holdings"] = (data_df["Close"] * data_df["Entry/Exit Position"].cumsum())
+
+    # Subtract the initial capital by the portfolio holdings to get the amount of liquid cash in the portfolio
+    data_df["Portfolio Cash"] = (initial_capital - (data_df["Close"] * data_df["Entry/Exit Position"]).cumsum())
+
+    # Get the total portfolio value by adding the cash amount by the portfolio holdings (or investments)
+    data_df["Portfolio Total"] = (data_df["Portfolio Cash"] + data_df["Portfolio Holdings"])
+
+    # Calculate the portfolio daily returns
+    data_df["Portfolio Daily Returns"] = data_df["Portfolio Total"].pct_change()
+
+    # Calculate the cumulative returns
+    data_df["Portfolio Cumulative Returns"] = (1 + data_df["Portfolio Daily Returns"]).cumprod() - 1
+
+    data_df.dropna(inplace=True)
+
+    return data_df
