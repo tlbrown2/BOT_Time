@@ -95,6 +95,8 @@ def makeTickerDfSignals(ticker_data_df,interval='1d',short_window=9,long_window=
 
     # RSI Indicator
     signals_df['RSI'] = computeRSI(signals_df['Close'], time_window=14)
+    signals_df['RSI_Upper_Lim'] = 70
+    signals_df['RSI_Lower_Lim'] = 30
 
     # MACD Indicator
     macd, macdsignal = calculate_macd(signals_df['Close'],short_window=short_window,long_window=long_window)

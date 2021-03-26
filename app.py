@@ -12,9 +12,11 @@ app = dash.Dash(__name__)
 
 # ---------- Import and clean data (importing csv into pandas)
 # df = pd.read_csv("intro_bees.csv")
-ticker = 'MSFT'
-df = td.getTickerPriceData(ticker,period='90d',interval='1d')
-signals_df = td.makeTickerDfSignals(df,interval='1d')
+ticker = 'GRWG'
+short_window = 9
+long_window = 21
+df = td.getTickerPriceData(ticker,period='200d',interval='1d')
+signals_df = td.makeTickerDfSignals(df,interval='1d',short_window=short_window,long_window=long_window)
 signals_df.drop(columns='Close',inplace=True)
 comb_df = pd.concat([df,signals_df],join='inner',axis=1)
 
@@ -42,7 +44,7 @@ def update_graph(data_df,ticker=None):
     )
     '''
     # Plotly Graph Objects (GO)
-    fig = go.Figure(
+    candlestick = go.Figure(
         data=[go.Candlestick(x=dff.index,
         open=dff['Open'],
         high=dff['High'],
@@ -51,26 +53,68 @@ def update_graph(data_df,ticker=None):
         )]
     )
 
-    fig.update_layout(
+    candlestick.update_layout(
         title_text="%s Stock Prices"%ticker,
         title_xanchor="center",
         title_font=dict(size=24),
         title_x=0.5,
     )
 
-    return fig
+    bollinger = go.Figure()
+    bollinger.add_trace(go.Scatter(x=dff.index,y=dff['Close'],name=dff['Close'].name,line=dict(color='orange',width=5)))
+    bollinger.add_trace(go.Scatter(x=dff.index, y=dff['Upper_Band'], name=dff['Upper_Band'].name,line=dict(dash='dash',color='green')))
+    bollinger.add_trace(go.Scatter(x=dff.index, y=dff['Lower_Band'], name=dff['Lower_Band'].name,line=dict(dash='dash',color='black')))
 
-fig = update_graph(comb_df,ticker)
+    rsi = go.Figure()
+    rsi.add_trace(go.Scatter(x=dff.index,y=dff['RSI'],name=dff['RSI'].name,line=dict(color='orange',width=5)))
+    rsi.add_trace(go.Scatter(x=dff.index, y=dff['RSI_Upper_Lim'], name=dff['RSI_Upper_Lim'].name, line=dict(color='red')))
+    rsi.add_trace(go.Scatter(x=dff.index, y=dff['RSI_Lower_Lim'], name=dff['RSI_Lower_Lim'].name, line=dict(color='red')))
+
+    xover = go.Figure()
+    xover.add_trace(go.Scatter(x=dff.index, y=dff['SMA%s'%long_window], name='Long', line=dict(color='blue')))
+    xover.add_trace(go.Scatter(x=dff.index, y=dff['SMA%s'%short_window], name='Short', line=dict(color='brown')))
+    xover.add_trace(go.Scatter(x=dff.index, y=dff[dff['Entry/Exit']== 1.0]['Close'], name='Entry', line=dict(color='green',dash='dot',width=8)))
+    xover.add_trace(go.Scatter(x=dff.index, y=dff[dff['Entry/Exit'] == -1.0]['Close'], name='Exit', line=dict(color='red',dash='dot',width=8)))
+    xover.add_trace(go.Scatter(x=dff.index, y=dff['Close'], name='Price', line=dict(color='orange')))
+
+
+    return candlestick,bollinger,rsi,xover
+
+candlestick,bollinger,rsi,xover = update_graph(comb_df,ticker)
 # ------------------------------------------------------------------------------
 # App layout
-app.layout = html.Div([
-
-    html.H1("Our Ticker Data with Dash", style={'text-align': 'center'}),
+app.layout = html.Div(children = [
+    html.Div([html.H1("Our Ticker Data with Dash", style={'text-align': 'center'}),
 
     html.Div(id='none',children=[]),
 
-    dcc.Graph(id='my_ticker_chart', figure=fig)
+    dcc.Graph(id='my_ticker_chart', figure=candlestick)
 
+    ]),
+    html.Div([
+        html.H1(children='%s Bollinger_Bands'%ticker,style={'text-align': 'center'}),
+
+        html.Div(children=[]),
+
+        dcc.Graph(id='Bollinger',figure=bollinger),
+
+    ]),
+    html.Div([
+        html.H1(children='%s RSI'%ticker,style={'text-align': 'center'}),
+
+        html.Div(children=[]),
+
+        dcc.Graph(id='RSI',figure=rsi),
+
+    ]),
+    html.Div([
+        html.H1(children='%s Long %i Short %i Crossover'%(ticker,long_window,short_window),style={'text-align': 'center'}),
+
+        html.Div(children=[]),
+
+        dcc.Graph(id='XOVER',figure=xover),
+
+    ])
 ])
 
 
