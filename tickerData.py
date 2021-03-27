@@ -2,7 +2,11 @@ import yfinance as yf
 import numpy as np
 import scipy as sp
 import pandas as pd
-
+from pathlib import Path
+from tensorflow.keras.models import model_from_json
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+import run_model_3 as rm3
 
 
 def getTickerPriceData(tickers,period='5d',interval='1d'):
@@ -137,4 +141,25 @@ def execute_backtest(data_df,initial_capital=10000.00,shares=500):
 
     data_df.dropna(inplace=True)
 
-    return data_df
+    # Make some predictions with the loaded model
+    model = load_model()
+    data_split = rm3.load_data(data_df, n_steps=50, scale=True, shuffle=True, lookup_step=1, split_by_date=True,
+                test_size=0.2, feature_columns=['Adj Close', 'Volume', 'Open', 'High', 'Low'])
+
+    # Final Dataframe
+    final_df = rm3.get_final_df(model,data_df)
+
+    return final_df
+
+def load_model(model_file="model_3_15day.json",weights_file="model_3_15day.h5"):
+    # load json and create model
+    file_path = Path(model_file)
+    with open(file_path, "r") as json_file:
+        model_json = json_file.read()
+    loaded_model = model_from_json(model_json)
+
+    # load weights into new model
+    file_path = "model_3_15day.h5"
+    loaded_model.load_weights(weights_file)
+
+    return loaded_model

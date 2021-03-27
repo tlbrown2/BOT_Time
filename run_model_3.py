@@ -233,7 +233,7 @@ def plot_graph(test_df):
     plt.xlabel("Days")
     plt.ylabel("Price")
     plt.legend(["Actual Price", "Predicted Price"])
-    plt.show()
+    #plt.show()
 
 
 # In[105]:

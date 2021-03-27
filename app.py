@@ -15,14 +15,16 @@ app = dash.Dash(__name__)
 ticker = 'GRWG'
 short_window = 9
 long_window = 21
-df = td.getTickerPriceData(ticker,period='200d',interval='1d')
+df = td.getTickerPriceData(ticker,period='300d',interval='1d')
 signals_df = td.makeTickerDfSignals(df,interval='1d',short_window=short_window,long_window=long_window)
 signals_df.drop(columns='Close',inplace=True)
 comb_df = pd.concat([df,signals_df],join='inner',axis=1)
 
+all_df = td.execute_backtest(comb_df,initial_capital=10000.00,shares=500)
+
 #df = df.groupby(['State', 'ANSI', 'Affected by', 'Year', 'state_code'])[['Pct of Colonies Impacted']].mean()
 #df.reset_index(inplace=True)
-print(comb_df[:5])
+print(all_df[:5])
 
 def update_graph(data_df,ticker=None):
 
@@ -77,10 +79,12 @@ def update_graph(data_df,ticker=None):
     xover.add_trace(go.Scatter(x=dff.index, y=dff[dff['Entry/Exit'] == -1.0]['Close'], name='Exit', line=dict(color='red',dash='dot',width=8)))
     xover.add_trace(go.Scatter(x=dff.index, y=dff['Close'], name='Price', line=dict(color='orange')))
 
+    prediction = td.rm3.plot_graph(dff)
 
-    return candlestick,bollinger,rsi,xover
 
-candlestick,bollinger,rsi,xover = update_graph(comb_df,ticker)
+    return candlestick,bollinger,rsi,xover,prediction
+
+candlestick,bollinger,rsi,xover,prediction = update_graph(all_df,ticker)
 # ------------------------------------------------------------------------------
 # App layout
 app.layout = html.Div(children = [
@@ -113,6 +117,14 @@ app.layout = html.Div(children = [
         html.Div(children=[]),
 
         dcc.Graph(id='XOVER',figure=xover),
+
+    ]),
+    html.Div([
+        html.H1(children='%s Prediction'%ticker,style={'text-align': 'center'}),
+
+        html.Div(children=[]),
+
+        dcc.Graph(id='PREDICT',figure=prediction),
 
     ])
 ])
