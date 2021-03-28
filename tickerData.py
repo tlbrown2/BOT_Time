@@ -147,7 +147,7 @@ def execute_backtest(data_df,initial_capital=10000.00,shares=500):
                 test_size=0.2, feature_columns=['Adj Close', 'Volume', 'Open', 'High', 'Low'])
 
     # Final Dataframe
-    final_df = rm3.get_final_df(model,data_df)
+    final_df = rm3.get_final_df(model,data_split)
 
     return final_df
 

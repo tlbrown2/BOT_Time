@@ -245,6 +245,7 @@ def get_final_df(model, data):
     construct a final dataframe that includes the features along 
     with true and predicted prices of the testing dataset
     """
+
     # if predicted future price is higher than the current, 
     # then calculate the true future price minus the current price, to get the buy profit
     buy_profit  = lambda current, true_future, pred_future: true_future - current if pred_future > current else 0
