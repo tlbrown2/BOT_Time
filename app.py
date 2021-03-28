@@ -2,10 +2,11 @@ import pandas as pd
 import plotly.express as px  # (version 4.7.0)
 import plotly.graph_objects as go
 import tickerData as td
-
+import executeTrade as et
 import dash  # (version 1.12.0) pip install dash
 import dash_core_components as dcc
 import dash_html_components as html
+import dash_table as dtable
 from dash.dependencies import Input, Output
 
 
@@ -44,6 +45,10 @@ comb_df = pd.concat([df,signals_df],join='inner',axis=1)
 
 # Loading the models and back-testing the data w/ signals; returns dataframe
 all_df = td.execute_backtest(comb_df,initial_capital=10000.00,shares=500)
+
+# Load Ticker Options Chain from the Webull Trading Application
+if ticker != 'SPY':
+    options_df = et.get_webull_options(ticker)
 
 print(all_df[:5])
 
@@ -110,10 +115,16 @@ def update_graph(data_df,ticker=None):
     prediction.add_trace(go.Scatter(x=dff.index, y=dff['adjclose_15'], name='Predicted Price', line=dict(color='red',width=6)))
     prediction.update_yaxes(title_text='Close Prices',tickprefix='$',color='blue')
 
+    if ticker != 'SPY':
+        options_df = et.get_webull_options(ticker)
+        options = go.Figure(data=[go.Table(header=dict(values=list(options_df.columns),align='left'),)])
+    else:
+        options = go.Figure()
+        options.add_trace(go.Scatter(x=dff.index,y=1))
 
-    return candlestick,bollinger,rsi,xover,prediction
+    return candlestick,bollinger,rsi,xover,prediction,options
 
-candlestick,bollinger,rsi,xover,prediction = update_graph(all_df,ticker)
+candlestick,bollinger,rsi,xover,prediction,options = update_graph(all_df,ticker)
 
 # App layout
 app.layout = html.Div(style={'backgroundColor': colors['background']},children = [
@@ -157,6 +168,11 @@ app.layout = html.Div(style={'backgroundColor': colors['background']},children =
 
         dcc.Graph(id='PREDICT',figure=prediction),
 
+    ]),
+    html.Div([
+        dtable.DataTable(id='table',columns=[{'name': i, 'id':i} for i in options_df.columns],
+                         data = options_df.to_dict('records'),
+                         ),
     ])
 ])
 
