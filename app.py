@@ -44,7 +44,7 @@ signals_df.drop(columns='Close',inplace=True)
 comb_df = pd.concat([df,signals_df],join='inner',axis=1)
 
 # Loading the models and back-testing the data w/ signals; returns dataframe
-all_df = td.execute_backtest(comb_df,initial_capital=10000.00,shares=500)
+all_df,future_price = td.execute_backtest(comb_df,initial_capital=10000.00,shares=500)
 
 # Load Ticker Options Chain from the Webull Trading Application
 if ticker != 'SPY':
@@ -54,7 +54,7 @@ print(all_df[:5])
 
 
 # Web App function to update the data
-def update_graph(data_df,ticker=None):
+def update_graph(data_df,ticker=None,future_price=0):
 
     dff = data_df.copy()
     '''
@@ -115,6 +115,16 @@ def update_graph(data_df,ticker=None):
     prediction.add_trace(go.Scatter(x=dff.index, y=dff['adjclose_15'], name='Predicted Price', line=dict(color='red',width=6)))
     prediction.update_yaxes(title_text='Close Prices',tickprefix='$',color='blue')
 
+    #prediction number
+    predicted_price = go.Figure()
+    predicted_price.add_trace(go.Indicator(
+    mode = "number+delta",
+    value = float(future_price),
+    number= {'prefix' : '$'},
+    delta = {'position': 'bottom','reference': dff['Close'].iloc[-1]},
+    domain = {'x': [0,1], 'y': [0,1]}))
+    predicted_price.update_layout(paper_bgcolor = 'lightblue')
+
     if ticker != 'SPY':
         options_df = et.get_webull_options(ticker)
         options = go.Figure(data=[go.Table(header=dict(values=list(options_df.columns),align='left'),)])
@@ -122,9 +132,9 @@ def update_graph(data_df,ticker=None):
         options = go.Figure()
         options.add_trace(go.Scatter(x=dff.index,y=1))
 
-    return candlestick,bollinger,rsi,xover,prediction,options
+    return candlestick,bollinger,rsi,xover,prediction,options,predicted_price
 
-candlestick,bollinger,rsi,xover,prediction,options = update_graph(all_df,ticker)
+candlestick,bollinger,rsi,xover,prediction,options,predicted_price = update_graph(all_df,ticker,future_price)
 
 # App layout
 app.layout = html.Div(style={'backgroundColor': colors['background']},children = [
@@ -167,6 +177,14 @@ app.layout = html.Div(style={'backgroundColor': colors['background']},children =
         html.Div(children=[]),
 
         dcc.Graph(id='PREDICT',figure=prediction),
+
+    ]),
+    html.Div([
+        html.H1(children='%s Prediction Price'%ticker,style={'text-align': 'center','color':'white'}),
+
+        html.Div(children=[]),
+
+        dcc.Graph(id='Predicted Price',figure=predicted_price),
 
     ]),
     html.Div([

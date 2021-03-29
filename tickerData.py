@@ -139,17 +139,21 @@ def execute_backtest(data_df,initial_capital=10000.00,shares=500):
     # Calculate the cumulative returns
     data_df["Portfolio Cumulative Returns"] = (1 + data_df["Portfolio Daily Returns"]).cumprod() - 1
 
-    data_df.dropna(inplace=True)
+    #data_df.dropna(inplace=True)
 
     # Make some predictions with the loaded model
     model = load_model()
+
     data_split = rm3.load_data(data_df, n_steps=50, scale=True, shuffle=True, lookup_step=1, split_by_date=True,
                 test_size=0.2, feature_columns=['Adj Close', 'Volume', 'Open', 'High', 'Low'])
+
+    # Future Price Data from prediction
+    future_price = rm3.predict(model, data_split)
 
     # Final Dataframe
     final_df = rm3.get_final_df(model,data_split)
 
-    return final_df
+    return final_df,future_price
 
 def load_model(model_file="model_3_15day.json",weights_file="model_3_15day.h5"):
     # load json and create model

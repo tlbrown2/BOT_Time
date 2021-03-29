@@ -1,6 +1,6 @@
 import pandas as pd
-from webull import paper_webull
-wb = paper_webull()
+from webull import webull
+wb = webull()
 data = wb.login('etlivefree@gmail.com','liveFree0815!','TBpython','422834')
 wb.refresh_login()
 
@@ -31,8 +31,9 @@ def get_webull_options(ticker):
     options_df[['Ask_Volume']] = options_df.askList[0][0]['volume']
     options_df[['Bid_Price']] = options_df.bidList[0][0]['price']
     options_df[['Bid_Volume']] = options_df.bidList[0][0]['volume']
+
+    #reordering columns
+    official_options_df = options_df[['tickerId','unSymbol','symbol','direction','strikePrice','Ask_Price','Ask_Volume','Bid_Price','Bid_Volume','expireDate','tradeTime','tradeStamp','volume','close','preClose','open','high','low','delta','vega','gamma','theta','rho','changeRatio','change','weekly','activeLevel','openIntChange']]
     # Setting the DF index to the unique ticker options id
     options_df.set_index('tickerId', inplace=True)
-    #reordering columns
-    official_options_df = options_df[['unSymbol','symbol','direction','strikePrice','Ask_Price','Ask_Volume','Bid_Price','Bid_Volume','expireDate','tradeTime','tradeStamp','impVol','volume','close','preClose','open','high','low','delta','vega','gamma','theta','rho','changeRatio','change','weekly','activeLevel','openIntChange']]
     return official_options_df
