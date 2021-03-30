@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[3]:
 
 
 import tensorflow as tf
@@ -21,7 +21,7 @@ import pandas as pd
 import random
 
 
-# In[2]:
+# In[4]:
 
 
 def getTickerPriceData(tickers,period='7300d', interval='1d'):
@@ -30,13 +30,13 @@ def getTickerPriceData(tickers,period='7300d', interval='1d'):
     return ticker_df
 
 
-# In[3]:
+# In[5]:
 
 
 #getTickerPriceData('SPY')
 
 
-# In[4]:
+# In[6]:
 
 
 def shuffle_in_unison(a, b):
@@ -144,7 +144,7 @@ def load_data(ticker, n_steps=50, scale=True, shuffle=True, lookup_step=1, split
     return result
 
 
-# In[5]:
+# In[7]:
 
 
 import os
@@ -197,7 +197,7 @@ if BIDIRECTIONAL:
     model_name += "-b"
 
 
-# In[6]:
+# In[ ]:
 
 
 # load the data
@@ -218,7 +218,7 @@ file_path = "model_3_15day.h5"
 loaded_model_3_15day.load_weights(file_path)
 
 
-# In[7]:
+# In[ ]:
 
 
 import matplotlib.pyplot as plt
@@ -236,7 +236,7 @@ def plot_graph(test_df):
     plt.show()
 
 
-# In[8]:
+# In[ ]:
 
 
 def get_final_df(model, data):
@@ -283,7 +283,7 @@ def get_final_df(model, data):
     return final_df
 
 
-# In[9]:
+# In[ ]:
 
 
 def predict(model, data):
@@ -301,13 +301,13 @@ def predict(model, data):
     return predicted_price
 
 
-# In[28]:
+# In[ ]:
 
 
 data['df']['Adj Close'][-1]
 
 
-# In[46]:
+# In[ ]:
 
 
 def recommendation(model, data):
@@ -334,10 +334,10 @@ def recommendation(model, data):
     else: 
         recommendation = f"This model recommends you take a Call because Future price after {LOOKUP_STEP} days is ${predicted_price}. A strike price of ${strike_price_call} is suggested."
     
-    return recommendation
+    return recommendation, predicted_price, strike_price_call, strike_price_put
 
 
-# In[47]:
+# In[ ]:
 
 
 # get the final dataframe for the testing set
@@ -350,23 +350,19 @@ final_df = get_final_df(loaded_model_3_15day, data)
 
 
 
-# In[48]:
-
-
-# predict the future price
-future_price = predict(loaded_model_3_15day, data)
-print(future_price)
-
-
-# In[49]:
+# In[ ]:
 
 
 option_recommendation = recommendation(loaded_model_3_15day, data)
 option_recommendation
 
 
-# In[17]:
+# In[48]:
 
+
+# predict the future price
+future_price = predict(loaded_model_3_15day, data)
+print(future_price)
 
 # we calculate the accuracy by counting the number of positive profits
 accuracy_score = (len(final_df[final_df['sell_profit'] > 0]) + len(final_df[final_df['buy_profit'] > 0])) / len(final_df)
@@ -379,8 +375,6 @@ total_profit = total_buy_profit + total_sell_profit
 profit_per_trade = total_profit / len(final_df)
 
 print(accuracy_score)
-
-
 # In[ ]:
 
 
