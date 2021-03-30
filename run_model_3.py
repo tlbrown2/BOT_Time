@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[70]:
+# In[1]:
 
 
 import tensorflow as tf
@@ -21,7 +21,7 @@ import pandas as pd
 import random
 
 
-# In[99]:
+# In[2]:
 
 
 def getTickerPriceData(tickers,period='7300d', interval='1d'):
@@ -30,13 +30,13 @@ def getTickerPriceData(tickers,period='7300d', interval='1d'):
     return ticker_df
 
 
-# In[100]:
+# In[3]:
 
 
 #getTickerPriceData('SPY')
 
 
-# In[101]:
+# In[4]:
 
 
 def shuffle_in_unison(a, b):
@@ -144,7 +144,7 @@ def load_data(ticker, n_steps=50, scale=True, shuffle=True, lookup_step=1, split
     return result
 
 
-# In[102]:
+# In[5]:
 
 
 import os
@@ -197,7 +197,7 @@ if BIDIRECTIONAL:
     model_name += "-b"
 
 
-# In[103]:
+# In[6]:
 
 
 # load the data
@@ -218,7 +218,7 @@ file_path = "model_3_15day.h5"
 loaded_model_3_15day.load_weights(file_path)
 
 
-# In[104]:
+# In[7]:
 
 
 import matplotlib.pyplot as plt
@@ -233,10 +233,10 @@ def plot_graph(test_df):
     plt.xlabel("Days")
     plt.ylabel("Price")
     plt.legend(["Actual Price", "Predicted Price"])
-    #plt.show()
+    plt.show()
 
 
-# In[105]:
+# In[8]:
 
 
 def get_final_df(model, data):
@@ -245,7 +245,6 @@ def get_final_df(model, data):
     construct a final dataframe that includes the features along 
     with true and predicted prices of the testing dataset
     """
-
     # if predicted future price is higher than the current, 
     # then calculate the true future price minus the current price, to get the buy profit
     buy_profit  = lambda current, true_future, pred_future: true_future - current if pred_future > current else 0
@@ -284,7 +283,7 @@ def get_final_df(model, data):
     return final_df
 
 
-# In[106]:
+# In[9]:
 
 
 def predict(model, data):
@@ -302,21 +301,71 @@ def predict(model, data):
     return predicted_price
 
 
-# In[107]:
+# In[28]:
+
+
+data['df']['Adj Close'][-1]
+
+
+# In[46]:
+
+
+def recommendation(model, data):
+    df = get_final_df(model, data)
+    avg_error = abs(final_df['adjclose_15'] - final_df['true_adjclose_15']).mean()
+    # retrieve the last sequence from data
+    last_sequence = data["last_sequence"][-N_STEPS:]
+    # expand dimension
+    last_sequence = np.expand_dims(last_sequence, axis=0)
+    # get the prediction (scaled from 0 to 1)
+    prediction = model.predict(last_sequence)
+    # get the price (by inverting the scaling)
+    if SCALE:
+        predicted_price = data["column_scaler"]["Adj Close"].inverse_transform(prediction)[0][0]
+    else:
+           predicted_price = prediction[0][0]
+    
+    last_close_price = data['df']['Adj Close'][-1]
+    strike_price_call = predicted_price - avg_error 
+    strike_price_put = predicted_price + avg_error 
+    
+    if last_close_price > predicted_price:
+        recommendation = f"This model recommends you take a Put because Future price after {LOOKUP_STEP} days is ${predicted_price}. A strike price of ${strike_price_put} is suggested."
+    else: 
+        recommendation = f"This model recommends you take a Call because Future price after {LOOKUP_STEP} days is ${predicted_price}. A strike price of ${strike_price_call} is suggested."
+    
+    return recommendation
+
+
+# In[47]:
 
 
 # get the final dataframe for the testing set
 final_df = get_final_df(loaded_model_3_15day, data)
 
 
-# In[108]:
+# In[ ]:
+
+
+
+
+
+# In[48]:
 
 
 # predict the future price
 future_price = predict(loaded_model_3_15day, data)
+print(future_price)
 
 
-# In[109]:
+# In[49]:
+
+
+option_recommendation = recommendation(loaded_model_3_15day, data)
+option_recommendation
+
+
+# In[17]:
 
 
 # we calculate the accuracy by counting the number of positive profits
@@ -329,61 +378,16 @@ total_profit = total_buy_profit + total_sell_profit
 # dividing total profit by number of testing samples (number of trades)
 profit_per_trade = total_profit / len(final_df)
 
-
-# In[110]:
-
-
-import os
-import time
-from tensorflow.keras.layers import LSTM
-
-# Window size or the sequence length
-N_STEPS = 50
-# Lookup step, 1 is the next day
-LOOKUP_STEP = 15
-# whether to scale feature columns & output price as well
-SCALE = True
-scale_str = f"sc-{int(SCALE)}"
-# whether to shuffle the dataset
-SHUFFLE = True
-shuffle_str = f"sh-{int(SHUFFLE)}"
-# whether to split the training/testing set by date
-SPLIT_BY_DATE = False
-split_by_date_str = f"sbd-{int(SPLIT_BY_DATE)}"
-# test ratio size, 0.2 is 20%
-TEST_SIZE = 0.2
-# features to use
-FEATURE_COLUMNS = ["Adj Close", "Volume", "Open", "High", "Low"]
-# date now
-date_now = time.strftime("%Y-%m-%d")
-### model parameters
-N_LAYERS = 2
-# LSTM cell
-CELL = LSTM
-# 256 LSTM neurons
-UNITS = 256
-# 40% dropout
-DROPOUT = 0.4
-# whether to use bidirectional RNNs
-BIDIRECTIONAL = False
-### training parameters
-# mean absolute error loss
-LOSS = "mae"
-# huber loss
-#LOSS = "huber_loss"
-OPTIMIZER = "adam"
-BATCH_SIZE = 64
-EPOCHS = 10
-# Amazon stock market
-ticker = "SPY"
-ticker_data_filename = os.path.join("data", f"{ticker}_{date_now}.csv")
-# model name to save, making it as unique as possible based on parameters
-model_name = f"{date_now}_{ticker}-{shuffle_str}-{scale_str}-{split_by_date_str}-{LOSS}-{OPTIMIZER}-{CELL.__name__}-seq-{N_STEPS}-step-{LOOKUP_STEP}-layers-{N_LAYERS}-units-{UNITS}"
-if BIDIRECTIONAL:
-    model_name += "-b"
+print(accuracy_score)
 
 
-# In[113]:
+# In[ ]:
+
+
+
+
+
+# In[18]:
 
 
 # printing metrics
