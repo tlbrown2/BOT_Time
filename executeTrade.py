@@ -23,17 +23,29 @@ def get_webull_options(ticker):
             #strike_price = list_option[key]
             if key != 'strikePrice':
                 temp_dict = list_option[key]
+                temp_dict.update({'ask_price': temp_dict['askList'][0]['price']})
+                temp_dict.update({'ask_volume': temp_dict['askList'][0]['volume']})
+                temp_dict.update({'bid_price': temp_dict['bidList'][0]['price']})
+                temp_dict.update({'bid_volume': temp_dict['bidList'][0]['volume']})
                 official_options_list.append(temp_dict)
+
     #print(official_options_list)
     options_df = pd.DataFrame(official_options_list)
     # Splitting Ask & Bid List Series Data into separate columns
-    options_df[['Ask_Price']] = options_df.askList[0][0]['price']
-    options_df[['Ask_Volume']] = options_df.askList[0][0]['volume']
-    options_df[['Bid_Price']] = options_df.bidList[0][0]['price']
-    options_df[['Bid_Volume']] = options_df.bidList[0][0]['volume']
+    #options_df[['Ask_Price']] = options_df.askList[:][:]['price']
+    #options_df[['Ask_Volume']] = options_df.askList[:][:]['volume']
+    #options_df[['Bid_Price']] = options_df.bidList[:][:]['price']
+    #options_df[['Bid_Volume']] = options_df.bidList[:][:]['volume']
 
     #reordering columns
-    official_options_df = options_df[['tickerId','unSymbol','symbol','direction','strikePrice','Ask_Price','Ask_Volume','Bid_Price','Bid_Volume','expireDate','tradeTime','tradeStamp','volume','close','preClose','open','high','low','delta','vega','gamma','theta','rho','changeRatio','change','weekly','activeLevel','openIntChange']]
-    # Setting the DF index to the unique ticker options id
+    official_options_df = options_df[
+        ['tickerId', 'unSymbol', 'symbol', 'direction', 'strikePrice', 'ask_price','ask_volume', 'bid_price','bid_volume', 'expireDate', 'tradeTime',
+         'tradeStamp', 'volume', 'close', 'preClose', 'open', 'high', 'low', 'delta', 'vega', 'gamma', 'theta', 'rho',
+         'changeRatio', 'change', 'weekly', 'activeLevel', 'openIntChange']]
+
+    #official_options_df = options_df[['tickerId','unSymbol','symbol','direction','strikePrice','askList','bidList','expireDate','tradeTime','tradeStamp','volume','close','preClose','open','high','low','delta','vega','gamma','theta','rho','changeRatio','change','weekly','activeLevel','openIntChange']]
+    #official_options_df = options_df[['tickerId', 'unSymbol', 'symbol', 'direction', 'strikePrice','expireDate', 'tradeTime','tradeStamp', 'volume', 'close', 'preClose', 'open', 'high', 'low', 'delta', 'vega', 'gamma', 'theta', 'rho','changeRatio', 'change', 'weekly', 'activeLevel', 'openIntChange']]
+    #Setting the DF index to the unique ticker options id
+    #official_options_df = options_df.copy()
     options_df.set_index('tickerId', inplace=True)
     return official_options_df
