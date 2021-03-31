@@ -233,7 +233,7 @@ def plot_graph(test_df):
     plt.xlabel("Days")
     plt.ylabel("Price")
     plt.legend(["Actual Price", "Predicted Price"])
-    plt.show()
+    #plt.show()
 
 
 # In[ ]:
@@ -295,10 +295,10 @@ def predict(model, data):
     prediction = model.predict(last_sequence)
     # get the price (by inverting the scaling)
     if SCALE:
-        predicted_price = data["column_scaler"]["Adj Close"].inverse_transform(prediction)[0][0]
+        predicted_price = round(data["column_scaler"]["Adj Close"].inverse_transform(prediction)[0][0],2)
     else:
-        predicted_price = prediction[0][0]
-    return predicted_price
+        predicted_price = round(prediction[0][0],2)
+    return round(predicted_price,2)
 
 
 # In[ ]:
@@ -321,20 +321,20 @@ def recommendation(model, data):
     prediction = model.predict(last_sequence)
     # get the price (by inverting the scaling)
     if SCALE:
-        predicted_price = data["column_scaler"]["Adj Close"].inverse_transform(prediction)[0][0]
+        predicted_price = round(data["column_scaler"]["Adj Close"].inverse_transform(prediction)[0][0],2)
     else:
-           predicted_price = prediction[0][0]
+           predicted_price = round(prediction[0][0],2)
     
     last_close_price = data['df']['Adj Close'][-1]
-    strike_price_call = predicted_price - avg_error 
-    strike_price_put = predicted_price + avg_error 
+    strike_price_call = round(predicted_price - avg_error,2)
+    strike_price_put = round(predicted_price + avg_error,2)
     
     if last_close_price > predicted_price:
-        recommendation = f"This model recommends you take a Put because Future price after {LOOKUP_STEP} days is ${predicted_price}. A strike price of ${strike_price_put} is suggested."
+        recommendation = f"This model recommends you take a Put because Future price after {LOOKUP_STEP} days is ${round(predicted_price,2)}. A strike price of ${strike_price_put} is suggested."
     else: 
-        recommendation = f"This model recommends you take a Call because Future price after {LOOKUP_STEP} days is ${predicted_price}. A strike price of ${strike_price_call} is suggested."
+        recommendation = f"This model recommends you take a Call because Future price after {LOOKUP_STEP} days is ${round(predicted_price,2)}. A strike price of ${strike_price_call} is suggested."
     
-    return recommendation, predicted_price, strike_price_call, strike_price_put
+    return df,recommendation, round(predicted_price,2), strike_price_call, strike_price_put
 
 
 # In[ ]:
@@ -375,11 +375,7 @@ total_profit = total_buy_profit + total_sell_profit
 profit_per_trade = total_profit / len(final_df)
 
 print(accuracy_score)
-# In[ ]:
-
-
-
-
+# In[ ]:GOO
 
 # In[18]:
 

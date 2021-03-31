@@ -46,6 +46,6 @@ def get_webull_options(ticker):
     #official_options_df = options_df[['tickerId','unSymbol','symbol','direction','strikePrice','askList','bidList','expireDate','tradeTime','tradeStamp','volume','close','preClose','open','high','low','delta','vega','gamma','theta','rho','changeRatio','change','weekly','activeLevel','openIntChange']]
     #official_options_df = options_df[['tickerId', 'unSymbol', 'symbol', 'direction', 'strikePrice','expireDate', 'tradeTime','tradeStamp', 'volume', 'close', 'preClose', 'open', 'high', 'low', 'delta', 'vega', 'gamma', 'theta', 'rho','changeRatio', 'change', 'weekly', 'activeLevel', 'openIntChange']]
     #Setting the DF index to the unique ticker options id
-    #official_options_df = options_df.copy()
+        #official_options_df = options_df.copy()
     options_df.set_index('tickerId', inplace=True)
     return official_options_df

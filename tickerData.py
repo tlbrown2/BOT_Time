@@ -148,12 +148,14 @@ def execute_backtest(data_df,initial_capital=10000.00,shares=500):
                 test_size=0.2, feature_columns=['Adj Close', 'Volume', 'Open', 'High', 'Low'])
 
     # Future Price Data from prediction
-    future_price = rm3.predict(model, data_split)
+    #future_price = rm3.predict(model, data_split)
 
     # Final Dataframe
-    final_df = rm3.get_final_df(model,data_split)
+    #final_df = rm3.get_final_df(model,data_split)
+    final_df,recommendation, predicted_price, strike_price_call, strike_price_put = rm3.recommendation(model, data_split)
 
-    return final_df,future_price
+
+    return final_df,recommendation, predicted_price, strike_price_call, strike_price_put
 
 def load_model(model_file="model_3_15day.json",weights_file="model_3_15day.h5"):
     # load json and create model

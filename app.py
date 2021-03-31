@@ -44,7 +44,7 @@ signals_df.drop(columns='Close',inplace=True)
 comb_df = pd.concat([df,signals_df],join='inner',axis=1)
 
 # Loading the models and back-testing the data w/ signals; returns dataframe
-all_df,future_price = td.execute_backtest(comb_df,initial_capital=10000.00,shares=500)
+all_df,recommendation, predicted_price, strike_price_call, strike_price_put = td.execute_backtest(comb_df,initial_capital=10000.00,shares=500)
 
 # Load Ticker Options Chain from the Webull Trading Application
 if ticker != 'SPY':
@@ -104,8 +104,8 @@ def update_graph(data_df,ticker=None,future_price=0):
     xover = go.Figure()
     xover.add_trace(go.Scatter(x=dff.index, y=dff['SMA%s'%long_window], name='Long', line=dict(color='blue')))
     xover.add_trace(go.Scatter(x=dff.index, y=dff['SMA%s'%short_window], name='Short', line=dict(color='brown')))
-    xover.add_trace(go.Scatter(x=dff.index, y=dff[dff['Entry/Exit']== 1.0]['Close'], name='Entry', line=dict(color='green',dash='dot',width=8)))
-    xover.add_trace(go.Scatter(x=dff.index, y=dff[dff['Entry/Exit'] == -1.0]['Close'], name='Exit', line=dict(color='red',dash='dot',width=8)))
+    #xover.add_trace(go.Scatter(x=dff.index, y=dff[dff['Entry/Exit']== 1.0]['Close'], name='Entry', line=dict(color='green',dash='dot',width=8)))
+    #xover.add_trace(go.Scatter(x=dff.index, y=dff[dff['Entry/Exit'] == -1.0]['Close'], name='Exit', line=dict(color='red',dash='dot',width=8)))
     xover.add_trace(go.Scatter(x=dff.index, y=dff['Close'], name='Price', line=dict(color='orange')))
     xover.update_yaxes(title_text='Close Prices', tickprefix='$', color='blue')
 
@@ -115,15 +115,44 @@ def update_graph(data_df,ticker=None,future_price=0):
     prediction.add_trace(go.Scatter(x=dff.index, y=dff['adjclose_15'], name='Predicted Price', line=dict(color='red',width=6)))
     prediction.update_yaxes(title_text='Close Prices',tickprefix='$',color='blue')
 
-    #prediction number
-    predicted_price = go.Figure()
-    predicted_price.add_trace(go.Indicator(
+    # prediction price
+    #recommendation_text = go.Figure()
+    #recommendation_text.add_trace(go.Indicator(
+        #mode="text",
+        #value=recommendation,
+        #domain={'x': [0, 1], 'y': [0, 1]}))
+    #recommendation_text.update_layout(paper_bgcolor='beige')
+
+    #prediction price
+    predicted_price_val = go.Figure()
+    predicted_price_val.add_trace(go.Indicator(
     mode = "number+delta",
-    value = float(future_price),
+    value = float(predicted_price),
     number= {'prefix' : '$'},
     delta = {'position': 'bottom','reference': dff['Close'].iloc[-1]},
     domain = {'x': [0,1], 'y': [0,1]}))
-    predicted_price.update_layout(paper_bgcolor = 'lightblue')
+    predicted_price_val.update_layout(paper_bgcolor = 'lightblue')
+
+    # Recommended Call Option Price
+    strike_call = go.Figure()
+    strike_call.add_trace(go.Indicator(
+        mode="number+delta",
+        value=float(strike_price_call),
+        number={'prefix': '$'},
+        delta={'position': 'bottom', 'reference': dff['Close'].iloc[-1]},
+        domain={'x': [0, 1], 'y': [0, 1]}))
+    strike_call.update_layout(paper_bgcolor='green')
+
+    # Recommended Put Option Price
+    strike_put = go.Figure()
+    strike_put.add_trace(go.Indicator(
+        mode="number+delta",
+        value=float(strike_price_put),
+        number={'prefix': '$'},
+        delta={'position': 'bottom', 'reference': dff['Close'].iloc[-1]},
+        domain={'x': [0, 1], 'y': [0, 1]}))
+    strike_put.update_layout(paper_bgcolor='red')
+
 
     if ticker != 'SPY':
         options_df = et.get_webull_options(ticker)
@@ -132,9 +161,9 @@ def update_graph(data_df,ticker=None,future_price=0):
         options = go.Figure()
         options.add_trace(go.Scatter(x=dff.index,y=1))
 
-    return candlestick,bollinger,rsi,xover,prediction,options,predicted_price
+    return candlestick,bollinger,rsi,xover,prediction,predicted_price_val,strike_call,strike_put,options
 
-candlestick,bollinger,rsi,xover,prediction,options,predicted_price = update_graph(all_df,ticker,future_price)
+candlestick,bollinger,rsi,xover,prediction,predicted_price_val,strike_call,strike_put,options = update_graph(all_df,ticker,predicted_price)
 
 # App layout
 app.layout = html.Div(style={'backgroundColor': colors['background']},children = [
@@ -170,7 +199,6 @@ app.layout = html.Div(style={'backgroundColor': colors['background']},children =
         dcc.Graph(id='XOVER',figure=xover),
 
     ]),
-
     html.Div([
         html.H1(children='%s Prediction'%ticker,style={'text-align': 'center','color':'white'}),
 
@@ -179,12 +207,37 @@ app.layout = html.Div(style={'backgroundColor': colors['background']},children =
         dcc.Graph(id='PREDICT',figure=prediction),
 
     ]),
+
     html.Div([
         html.H1(children='%s Prediction Price'%ticker,style={'text-align': 'center','color':'white'}),
 
         html.Div(children=[]),
 
-        dcc.Graph(id='Predicted Price',figure=predicted_price),
+        dcc.Graph(id='Predicted Price',figure=predicted_price_val),
+
+    ]),
+    html.Div([
+        html.H1(children='%s'%recommendation,style={'text-align': 'center','color':'yellow'}),
+
+        html.Div(children=[]),
+
+        #dcc.Graph(id='RECOMMEND',figure=prediction),
+
+    ]),
+    html.Div([
+        html.H1(children='%s Recommended Call Strike Price'%ticker,style={'text-align': 'center','color':'white'}),
+
+        html.Div(children=[]),
+
+        dcc.Graph(id='Strike Call Price',figure=strike_call),
+
+    ]),
+    html.Div([
+        html.H1(children='%s Recommended Put Strike Price'%ticker,style={'text-align': 'center','color':'white'}),
+
+        html.Div(children=[]),
+
+        dcc.Graph(id='Strike Put Price',figure=strike_put),
 
     ]),
     html.Div([
