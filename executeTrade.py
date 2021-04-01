@@ -29,13 +29,8 @@ def get_webull_options(ticker):
                 temp_dict.update({'bid_volume': temp_dict['bidList'][0]['volume']})
                 official_options_list.append(temp_dict)
 
-    #print(official_options_list)
+    #Turning summarized list into a dataframe
     options_df = pd.DataFrame(official_options_list)
-    # Splitting Ask & Bid List Series Data into separate columns
-    #options_df[['Ask_Price']] = options_df.askList[:][:]['price']
-    #options_df[['Ask_Volume']] = options_df.askList[:][:]['volume']
-    #options_df[['Bid_Price']] = options_df.bidList[:][:]['price']
-    #options_df[['Bid_Volume']] = options_df.bidList[:][:]['volume']
 
     #reordering columns
     official_options_df = options_df[
@@ -43,9 +38,6 @@ def get_webull_options(ticker):
          'tradeStamp', 'volume', 'close', 'preClose', 'open', 'high', 'low', 'delta', 'vega', 'gamma', 'theta', 'rho',
          'changeRatio', 'change', 'weekly', 'activeLevel', 'openIntChange']]
 
-    #official_options_df = options_df[['tickerId','unSymbol','symbol','direction','strikePrice','askList','bidList','expireDate','tradeTime','tradeStamp','volume','close','preClose','open','high','low','delta','vega','gamma','theta','rho','changeRatio','change','weekly','activeLevel','openIntChange']]
-    #official_options_df = options_df[['tickerId', 'unSymbol', 'symbol', 'direction', 'strikePrice','expireDate', 'tradeTime','tradeStamp', 'volume', 'close', 'preClose', 'open', 'high', 'low', 'delta', 'vega', 'gamma', 'theta', 'rho','changeRatio', 'change', 'weekly', 'activeLevel', 'openIntChange']]
-    #Setting the DF index to the unique ticker options id
-        #official_options_df = options_df.copy()
+
     options_df.set_index('tickerId', inplace=True)
     return official_options_df

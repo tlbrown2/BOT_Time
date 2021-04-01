@@ -115,13 +115,6 @@ def update_graph(data_df,ticker=None,future_price=0):
     prediction.add_trace(go.Scatter(x=dff.index, y=dff['adjclose_15'], name='Predicted Price', line=dict(color='red',width=6)))
     prediction.update_yaxes(title_text='Close Prices',tickprefix='$',color='blue')
 
-    # prediction price
-    #recommendation_text = go.Figure()
-    #recommendation_text.add_trace(go.Indicator(
-        #mode="text",
-        #value=recommendation,
-        #domain={'x': [0, 1], 'y': [0, 1]}))
-    #recommendation_text.update_layout(paper_bgcolor='beige')
 
     #prediction price
     predicted_price_val = go.Figure()

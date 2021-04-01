@@ -18,8 +18,7 @@ def calculate_macd(data,short_window=8,long_window=22,verbose=0):
     EMA_short = data.ewm(halflife=short_window).mean()
     EMA_long = data.ewm(halflife=long_window).mean()
     macd = EMA_short - EMA_long
-    #data['MACD H'] = macd
-    #data['MACD Signal'] = np.where(df['MACD H'] > 0, 1.0, 0.0)
+
     macd_signal = np.where(macd > 0, 1.0, 0.0)
     if verbose:
         print(f'The short window is {short_window} & the long window is {long_window}!')
@@ -139,19 +138,14 @@ def execute_backtest(data_df,initial_capital=10000.00,shares=500):
     # Calculate the cumulative returns
     data_df["Portfolio Cumulative Returns"] = (1 + data_df["Portfolio Daily Returns"]).cumprod() - 1
 
-    #data_df.dropna(inplace=True)
-
     # Make some predictions with the loaded model
     model = load_model()
 
     data_split = rm3.load_data(data_df, n_steps=50, scale=True, shuffle=True, lookup_step=1, split_by_date=True,
                 test_size=0.2, feature_columns=['Adj Close', 'Volume', 'Open', 'High', 'Low'])
 
-    # Future Price Data from prediction
-    #future_price = rm3.predict(model, data_split)
 
-    # Final Dataframe
-    #final_df = rm3.get_final_df(model,data_split)
+    # Final Dataframe - running predictions and getting predicted prices & option chains
     final_df,recommendation, predicted_price, strike_price_call, strike_price_put = rm3.recommendation(model, data_split)
 
 
