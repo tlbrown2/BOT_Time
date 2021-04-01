@@ -323,18 +323,18 @@ def recommendation(model, data):
     if SCALE:
         predicted_price = round(data["column_scaler"]["Adj Close"].inverse_transform(prediction)[0][0],2)
     else:
-           predicted_price = round(prediction[0][0],2)
+        predicted_price = round(prediction[0][0],2)
     
     last_close_price = data['df']['Adj Close'][-1]
     strike_price_call = round(predicted_price - avg_error,2)
     strike_price_put = round(predicted_price + avg_error,2)
     
-    if last_close_price > predicted_price:
+    if last_close_price > round(predicted_price,2):
         recommendation = f"This model recommends you take a Put because Future price after {LOOKUP_STEP} days is ${round(predicted_price,2)}. A strike price of ${strike_price_put} is suggested."
     else: 
         recommendation = f"This model recommends you take a Call because Future price after {LOOKUP_STEP} days is ${round(predicted_price,2)}. A strike price of ${strike_price_call} is suggested."
     
-    return df,recommendation, round(predicted_price,2), strike_price_call, strike_price_put
+    return df,recommendation, predicted_price, strike_price_call, strike_price_put
 
 
 # In[ ]:
